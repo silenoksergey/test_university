@@ -1,6 +1,7 @@
-from typing import Annotated
-
 from pydantic import BaseModel, ConfigDict, Field
+
+GRADE_MIN = 0
+GRADE_MAX = 5
 
 
 class BaseGrade(BaseModel):
@@ -8,4 +9,4 @@ class BaseGrade(BaseModel):
 
     teacher_id: int
     student_id: int
-    grade: Annotated[int, Field(ge=0, le=5)]
+    grade: int = Field(ge=GRADE_MIN, le=GRADE_MAX)

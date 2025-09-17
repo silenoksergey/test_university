@@ -1,10 +1,10 @@
-from typing import Annotated
-
 from pydantic import BaseModel, Field
+
+from services.university.models.base_grade import GRADE_MIN, GRADE_MAX
 
 
 class GradeStatResponse(BaseModel):
-    count: Annotated[int, Field(ge=0)]
-    min: Annotated[int, Field(ge=0, le=5)] | None
-    max: Annotated[int, Field(ge=0, le=5)] | None
-    avg: Annotated[float, Field(ge=0, le=5)] | None
+    count: int | None = Field(ge=0)
+    min: int | None = Field(ge=GRADE_MIN, le=GRADE_MAX)
+    max: int | None = Field(ge=GRADE_MIN, le=GRADE_MAX)
+    avg: float | None = Field(ge=GRADE_MIN, le=GRADE_MAX)
