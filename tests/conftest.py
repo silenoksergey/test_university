@@ -63,7 +63,7 @@ def university_api_utils_admin(access_token):
 
 
 @pytest.fixture(scope="function", autouse=False)
-def _prepare_two_grades(university_api_utils_admin):
+def prepare_two_grades(university_api_utils_admin):
     university_service = UniversityService(api_utils=university_api_utils_admin)
 
     Logger.info(f"### Step 1. Create group")
