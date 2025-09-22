@@ -9,6 +9,15 @@ permissions:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    env:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB_AUTH: auth_db
+      POSTGRES_DB_UNIVERSITY: university_db
+      AUTH_SERVICE_INTERNAL_URL: http://auth:8000
+      AUTH_SERVICE_API_URL: http://localhost:8000
+      UNIVERSITY_SERVICE_INTERNAL_URL: http://university:8000
+      UNIVERSITY_SERVICE_API_URL: http://localhost:8001
 
     steps:
       - name: Checkout
@@ -42,6 +51,9 @@ jobs:
           done
           docker compose up
 
+      - name: Prepare Allure dir
+        run: mkdir -p allure-results
+
       - name: Run tests in Docker (host network)
         run: |
           docker run --rm --network host -v "$PWD":/app -w /app python:3.12-slim bash -lc "
@@ -55,6 +67,7 @@ jobs:
         with:
           name: allure-results
           path: allure-results
+          if-no-files-found: ignore
 
       - name: Publish Allure to Github Pages
         uses: simple-elf/allure-report-action@v1.7
