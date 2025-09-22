@@ -38,18 +38,29 @@ jobs:
         run: ruff check .
 
       - name: Start SUT (docker compose)
+        shell: bash
         run: |
+          set -euo pipefail
           docker compose up -d
           echo "Waiting for services to be ready..."
-          for i in {1..60}; do
-            if curl -fsS https://localhost:8000/docs > /dev/null 2> &1 && \
-              curl -fsS https://localhost:8001/docs > /dev?null 2> &1; then
+          ready=0
+          for i in {1..120}; do
+            ok1=1; ok2=1
+            curl -fsS http://localhost:8000/docs >/dev/null 2>&1 && ok1=0 || true
+            curl -fsS http://localhost:8001/docs >/dev/null 2>&1 && ok2=0 || true
+            if [ "$ok1" -eq 0 ] && [ "$ok2" -eq 0 ]; then
               echo "Services are ready"
+              ready=1
               break
             fi
             sleep 2
           done
-          docker compose up
+          docker compose ps
+          if [ "$ready" -ne 1 ]; then
+            echo "Services are NOT ready"
+            docker compose logs --no-color | tail -n 400 || true
+            exit 1
+          fi
 
       - name: Prepare Allure dir
         run: mkdir -p allure-results
