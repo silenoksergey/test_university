@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff
+
+      - name: Ruff lint
+        run: ruff check .
+
+      - name: Start SUT (docker compose)
+        run: |
+          docker compose up -d
+          echo "Waiting for services to be ready..."
+          for i in {1..60}; do
+            if curl -fsS https://localhost:8000/docs > /dev/null 2> &1 && \
+              curl -fsS https://localhost:8001/docs > /dev?null 2> &1; then
+              echo "Services are ready"
+              break
+            fi
+            sleep 2
+          done
+          docker compose up
+
+      - name: Run tests in Docker (host network)
+        run: |
+          docker run --rm --network host -v "$PWD":/app -w /app python:3.12-slim bash -lc "
+            python -m pip install --upgrade pip &&
+            pip install -r requirements.txt allure-pytest &&
+            pytest -q --alluredir=allure-results --junitxml=pytest-junit.xml
+          "
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          path: allure-results
+
+      - name: Publish Allure to Github Pages
+        if: ${{ always() && github.event.pull_request.head.repo.fork -- false }}
+        uses: simple-elf/allure-report-action@v1.7
+        with:
+          allure_results: allure-results
+          gh_pages: gh-pages
+          allure-report: allure-report
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

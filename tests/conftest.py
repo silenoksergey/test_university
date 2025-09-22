@@ -66,11 +66,11 @@ def university_api_utils_admin(access_token):
 def prepare_two_grades(university_api_utils_admin):
     university_service = UniversityService(api_utils=university_api_utils_admin)
 
-    Logger.info(f"### Step 1. Create group")
+    Logger.info("### Step 1. Create group")
     group = GroupRequest(name=faker.name())
     group_response = university_service.create_group(group_request=group)
 
-    Logger.info(f"### Step 2. Create student")
+    Logger.info("### Step 2. Create student")
     student = StudentRequest(first_name=faker.first_name(),
                              last_name=faker.last_name(),
                              email=faker.email(),
@@ -79,7 +79,7 @@ def prepare_two_grades(university_api_utils_admin):
                              group_id=group_response.id)
     student_response = university_service.create_student(student_request=student)
 
-    Logger.info(f"### Step 3. Create teacher")
+    Logger.info("### Step 3. Create teacher")
     teacher = TeachersRequest(first_name=faker.first_name(),
                               last_name=faker.last_name(),
                               subject=random.choice([option for option in SubjectEnum]))
@@ -95,7 +95,7 @@ def prepare_two_grades(university_api_utils_admin):
         grades.append(grade_response)
     g1, g2 = grades
 
-    Logger.info(f"### Step 5. Get Grades Stats")
+    Logger.info("### Step 5. Get Grades Stats")
     grade_stats = GradeStatRequest(student_id=student_response.id,
                                    teacher_id=teacher_response.id,
                                    group_id=group_response.id)

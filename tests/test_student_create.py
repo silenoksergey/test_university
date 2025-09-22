@@ -13,12 +13,12 @@ faker = Faker()
 
 class TestStudent:
     def test_student_create(self, university_api_utils_admin):
-        Logger.info(f"### Step 1. Create group")
+        Logger.info("### Step 1. Create group")
         university_service = UniversityService(api_utils=university_api_utils_admin)
         group = GroupRequest(name=faker.name())
         group_response = university_service.create_group(group_request=group)
 
-        Logger.info(f"### Step 2. Create student")
+        Logger.info("### Step 2. Create student")
         student = StudentRequest(first_name=faker.first_name(),
                                  last_name=faker.last_name(),
                                  email=faker.email(),
