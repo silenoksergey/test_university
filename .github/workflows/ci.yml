@@ -57,7 +57,6 @@ jobs:
           path: allure-results
 
       - name: Publish Allure to Github Pages
-        if: ${{ always() && github.event.pull_request.head.repo.fork -- false }}
         uses: simple-elf/allure-report-action@v1.7
         with:
           allure_results: allure-results
