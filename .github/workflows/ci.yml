@@ -80,11 +80,37 @@ jobs:
           path: allure-results
           if-no-files-found: ignore
 
-      - name: Publish Allure to Github Pages
-        uses: simple-elf/allure-report-action@v1.7
+      - name: Setup Java (for Allure CLI)
+        if: ${{ hashFiles('allure-results/**') != '' }}
+        uses: actions/setup-java@v4
         with:
-          allure_results: allure-results
-          gh_pages: gh-pages
-          allure-report: allure-report
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Allure CLI
+        if: ${{ hashFiles('allure-results/**') != '' }}
+        run: npm i -g allure-commandline@2.25.0
+
+      - name: Generate Allure HTML
+        if: ${{ hashFiles('allure-results/**') != '' }}
+        run: allure generate allure-results -o allure-report --clean
+
+      - name: Upload Pages artifact
+        if: ${{ hashFiles('allure-report/**') != '' }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: allure-report
+
+  deploy:
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
