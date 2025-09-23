@@ -88,28 +88,26 @@ jobs:
           java-version: '17'
 
       - name: Install Allure CLI
-        if: ${{ hashFiles('allure-results/**') != '' }}
+        if: ${{ always() && hashFiles('allure-results/**') != '' }}
         run: npm i -g allure-commandline@2.25.0
 
       - name: Generate Allure HTML
-        if: ${{ hashFiles('allure-results/**') != '' }}
+        if: ${{ always() && hashFiles('allure-results/**') != '' }}
         run: allure generate allure-results -o allure-report --clean
 
       - name: Upload Pages artifact
-        if: ${{ hashFiles('allure-report/**') != '' }}
+        if: ${{ always() && hashFiles('allure-results/**') != '' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: allure-report
 
   deploy:
     needs: tests
+    if: ${{ always() }}
     runs-on: ubuntu-latest
     permissions:
       pages: write
       id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
