@@ -47,7 +47,7 @@ jobs:
           for i in {1..120}; do
             ok1=1; ok2=1
             curl -fsS http://localhost:8000/docs >/dev/null 2>&1 && ok1=0 || true
-            curl -fsS http://localhost:8001/docs >/dev/null 2>&1 && ok2=0 || trueА
+            curl -fsS http://localhost:8001/docs >/dev/null 2>&1 && ok2=0 || true
             if [ "$ok1" -eq 0 ] && [ "$ok2" -eq 0 ]; then
               echo "Services are ready"
               ready=1
