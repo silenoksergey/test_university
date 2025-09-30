@@ -72,7 +72,7 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image: ghcr.io/${{ github.repository }}/test-runner:${{ github.sha }}
+      image: ${{ steps.meta.outputs.image }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -86,6 +86,11 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Define image tag
+        id: meta
+        shell: bash
+        run: echo "image=ghcr.io/${{ github.repository }}/test-runner:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
       - name: Create Dockerfile for test runner
         shell: bash
@@ -107,18 +112,20 @@ jobs:
           context: .
           file: Dockerfile.test-runner
           push: true
-          tags: ${{ needs.build_runner.outputs.image || format('ghcr.io/{0}/test-runner:{1}', github.repository, github.sha) }}
+          tags: ${{ steps.meta.outputs.image }}
 
   tests:
     name: Pytest in Docker
     runs-on: ubuntu-latest
-    needs: [lint, changes, build_runner]
+    needs: [ lint, changes, build_runner ]
     if: ${{ needs.lint.result == 'success' && (needs.changes.outputs.api_changed == 'true' || needs.changes.outputs.tests_changed == 'true') }}
     permissions:
       packages: read
     env:
       POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       RUNNER_IMAGE: ${{ needs.build_runner.outputs.image }}
+    outputs:
+      has_pages_artifact: ${{ steps.detect_allure.outputs.has_pages_artifact }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -170,8 +177,18 @@ jobs:
         if: ${{ always() && hashFiles('allure-results/**') != '' }}
         run: allure generate allure-results -o allure-report --clean
 
+      - name: Detect Allure report presence
+        id: detect_allure
+        shell: bash
+        run: |
+          if [ -d allure-report ] && [ "$(ls -A allure-report)" ]; then
+            echo "has_pages_artifact=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_pages_artifact=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Upload Pages artifact
-        if: ${{ always() && hashFiles('allure-results/**') != '' }}
+        if: ${{ steps.detect_allure.outputs.has_pages_artifact == 'true' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: allure-report
@@ -187,7 +204,7 @@ jobs:
   deploy:
     name: Publish Allure to GitHub Pages
     needs: tests
-    if: ${{ always() }}
+    if: ${{ needs.tests.result == 'success' && needs.tests.outputs.has_pages_artifact == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       pages: write

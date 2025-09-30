@@ -26,16 +26,17 @@ faker = Faker()
 def auth_service_readiness():
     timeout = 180
     start_time = time.time()
+    last_error = None
     while time.time() < start_time + timeout:
         try:
-            response = requests.get(AuthService.SERVICE_URL + "/docs")
+            response = requests.get(AuthService.SERVICE_URL + "/docs", timeout=5)
             response.raise_for_status()
-        except:
-            time.sleep(1)  # try again in 1 second
-        else:
             break
+        except requests.exceptions.RequestException as exc:
+            last_error = exc
+            time.sleep(1)
     else:
-        raise RuntimeError(f"Auth service wasn't started during '{timeout}' seconds.")
+        raise RuntimeError(f"Auth service wasn't started during '{timeout}' seconds.") from last_error
 
 
 @pytest.fixture(scope="function", autouse=False)
