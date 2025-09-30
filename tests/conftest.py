@@ -1,6 +1,8 @@
 import random
+import time
 
 import pytest
+import requests
 from faker import Faker
 
 from logger.logger import Logger
@@ -18,6 +20,22 @@ from services.university.university_service import UniversityService
 from utils.api_utils import ApiUtils
 
 faker = Faker()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def auth_service_readiness():
+    timeout = 180
+    start_time = time.time()
+    while time.time() < start_time + timeout:
+        try:
+            response = requests.get(AuthService.SERVICE_URL + "/docs")
+            response.raise_for_status()
+        except:
+            time.sleep(1)  # try again in 1 second
+        else:
+            break
+    else:
+        raise RuntimeError(f"Auth service wasn't started during '{timeout}' seconds.")
 
 
 @pytest.fixture(scope="function", autouse=False)
